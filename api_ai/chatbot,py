@@ -1,0 +1,57 @@
+import requests
+import time
+import sys
+
+TOGETHER_API_KEY = "1d0c05d5b4d30f43970a881aec5f90abf7dfa72bef2dfe6c3d076d8f3d814fec"
+TOGETHER_API_URL = "https://api.together.xyz/v1/chat/completions"
+
+HEADERS = {
+    "Authorization": f"Bearer {TOGETHER_API_KEY}",
+    "Content-Type": "application/json"
+}
+
+def type_effect(text, delay=0.03):
+    """Prints text with a typewriter effect"""
+    for char in text:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+        time.sleep(delay)
+    print()
+
+def get_together_response(user_query):
+    payload = {
+        "model": "meta-llama/Llama-3-8b-chat-hf",
+        "messages": [{"role": "user", "content": user_query}],
+        "temperature": 0.7,
+        "max_tokens": 1024
+    }
+
+    try:
+        response = requests.post(TOGETHER_API_URL, headers=HEADERS, json=payload)
+        response.raise_for_status()
+        
+        data = response.json()
+        return data['choices'][0]['message']['content'].strip()
+
+    except requests.exceptions.HTTPError as e:
+        return f"[HTTP error] {e}"
+    except requests.exceptions.RequestException as e:
+        return f"[Request failed] {e}"
+    except (ValueError, KeyError):
+        return "[Error] Invalid response from API."
+
+def chat():
+    print("Welcome to the chatbot! Type 'exit' to end the chat.\n")
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() == "exit":
+            print("Goodbye!")
+            break
+        
+        print("AI: ", end="", flush=True)
+        response = get_together_response(user_input)
+        type_effect(response)
+        print()
+
+if __name__ == "__main__":
+    chat()
